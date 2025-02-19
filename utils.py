@@ -26,7 +26,8 @@ def visualize_mri_slices(
         np.random.seed(seed)
 
     assert combined_x.ndim == 4, "combined_x should be a 4D array (H, W, S, C)."
-    assert mask.ndim == 3, "Mask must be a 3D array."
+    if mask.ndim == 4:
+        mask = mask.argmax(axis=-1)
 
     n_slices = combined_x.shape[2]
     n_slice = random.randint(0, n_slices - 1)

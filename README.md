@@ -33,7 +33,7 @@ To download the BraTS2020 dataset, run the provided download script. This script
 Run the script with:
 
 ```bash
-python dataset_download.py
+python data_preparation.py
 ```
 
 > **Note:** Ensure that you have the necessary permissions and API keys configured to access the dataset. To do so, place your `kaggle.json` credentials file in the appropriate location:  
