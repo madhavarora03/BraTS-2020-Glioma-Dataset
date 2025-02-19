@@ -1,5 +1,30 @@
+# Editor config files
 .idea/
+.vscode/
+
+# Virtual environment
 .venv/
+env/
+
+# Byte-compiled files
 __pycache__/
+*.py[cod]
+
+# Jupyter Notebook checkpoints
 .ipynb_checkpoints/
-data/
+
+# Logs and debugging files
+logs/
+*.log
+
+# System files (Mac/Linux/Windows)
+.DS_Store
+Thumbs.db
+
+# Dataset
+data/*
+!data/.gitkeep
+
+# Cache & Temp files
+*.swp
+*.swo
