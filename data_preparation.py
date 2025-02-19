@@ -1,4 +1,4 @@
-import glob
+from glob import glob
 import os
 import shutil
 from os import PathLike
@@ -17,10 +17,10 @@ from utils import to_categorical
 # Helper functions for file processing and preprocessing
 def get_file_lists(data_dir: str | PathLike[str] = "data/training_data/"):
     """ Get sorted lists of file paths for different modalities and masks. """
-    t2_list = sorted(glob.glob(f"{data_dir}/**/*t2.nii"))
-    t1ce_list = sorted(glob.glob(f"{data_dir}/**/*t1ce.nii"))
-    flair_list = sorted(glob.glob(f"{data_dir}/**/*flair.nii"))
-    mask_list = sorted(glob.glob(f"{data_dir}/**/*seg.nii"))
+    t2_list = sorted(glob(f"{data_dir}/**/*t2.nii"))
+    t1ce_list = sorted(glob(f"{data_dir}/**/*t1ce.nii"))
+    flair_list = sorted(glob(f"{data_dir}/**/*flair.nii"))
+    mask_list = sorted(glob(f"{data_dir}/**/*seg.nii"))
 
     assert len(t2_list) == len(t1ce_list) == len(flair_list) == len(mask_list), (
         f"{Fore.RED}❌ Length mismatch{Style.RESET_ALL}: All modality lists and mask lists should have the same number of items."
@@ -125,5 +125,5 @@ if __name__ == "__main__":
     splitfolders.ratio(input_path, output_path, seed=42, ratio=(0.75, 0.25), group_prefix=None)
 
     # Counting the number of images in the train and val directories
-    print(Fore.GREEN + f"There are {len(os.listdir(os.path.join(output_path, 'train/images')))} images in train.")
+    print(Fore.BLUE + f"There are {len(os.listdir(os.path.join(output_path, 'train/images')))} images in train.")
     print(Fore.BLUE + f"There are {len(os.listdir(os.path.join(output_path, 'val/images')))} images in val.")
