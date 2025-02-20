@@ -23,7 +23,13 @@ Thumbs.db
 
 # Dataset
 data/*
-!data/.gitkeep
+
+# Model Training Checkpoints
+checkpoints/*.pt
+checkpoints/*.pth
+
+# Model History
+results/*.json
 
 # Cache & Temp files
 *.swp

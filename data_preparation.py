@@ -1,13 +1,13 @@
-from glob import glob
 import os
 import shutil
+from glob import glob
 from os import PathLike
 
 import kagglehub
 import nibabel as nib
 import numpy as np
 import splitfolders
-from colorama import Fore, Style, init
+from colorama import Fore, Style
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
@@ -33,6 +33,7 @@ def get_file_lists(data_dir: str | PathLike[str] = "data/training_data/"):
 def load_and_preprocess_image(image_path: str | PathLike[str]):
     """ Load a NIfTI image and apply MinMax scaling. """
     image = nib.load(image_path).get_fdata()
+    scaler = MinMaxScaler()
     return scaler.fit_transform(image.reshape(-1, image.shape[-1])).reshape(image.shape)
 
 
@@ -51,7 +52,7 @@ def process_and_save_images(t2_list, t1ce_list, flair_list, mask_list,
     os.makedirs(os.path.join(output_dir, "images"), exist_ok=True)
     os.makedirs(os.path.join(output_dir, "masks"), exist_ok=True)
 
-    for img_idx in tqdm(range(len(t2_list)), desc="Processing images", colour="green"):
+    for img_idx in tqdm(range(len(t2_list)), desc="Processing images", colour="green", leave=False):
         print(f"⚙️ Now processing {Fore.BLUE}image and mask number: {img_idx}{Style.RESET_ALL}")
 
         # Load and preprocess modalities
@@ -79,13 +80,8 @@ def process_and_save_images(t2_list, t1ce_list, flair_list, mask_list,
             print(f"{Fore.RED}❌ Skipping{Style.RESET_ALL}: Insufficient tumor presence.")
 
 
-if __name__ == "__main__":
-    # Initialize colorama
-    init(autoreset=True)
-
-    # Initialize MinMaxScaler
-    scaler = MinMaxScaler()
-
+# Main function
+def main():
     # Dataset download and copy
     path = kagglehub.dataset_download("awsaf49/brats20-dataset-training-validation")
     print(f"{Fore.GREEN}Path to dataset files:{Style.RESET_ALL} {path}")
@@ -125,5 +121,10 @@ if __name__ == "__main__":
     splitfolders.ratio(input_path, output_path, seed=42, ratio=(0.75, 0.25), group_prefix=None)
 
     # Counting the number of images in the train and val directories
-    print(Fore.BLUE + f"There are {len(os.listdir(os.path.join(output_path, 'train/images')))} images in train.")
-    print(Fore.BLUE + f"There are {len(os.listdir(os.path.join(output_path, 'val/images')))} images in val.")
+    print(f"There are {Fore.BLUE}{len(os.listdir(os.path.join(output_path, 'train/images')))}{Style.RESET_ALL} images in train.")
+    print(f"There are {Fore.BLUE}{len(os.listdir(os.path.join(output_path, 'val/images')))}{Style.RESET_ALL} images in val.")
+    print(f"Total images with usable tumor information: {Fore.CYAN}{len(os.listdir(os.path.join(output_path, 'train/images'))) + len(os.listdir(os.path.join(output_path, 'val/images')))}{Style.RESET_ALL}")
+
+
+if __name__ == "__main__":
+    main()

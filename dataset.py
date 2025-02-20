@@ -18,7 +18,7 @@ class BraTS2020Dataset(Dataset):
             mask_dir: str | PathLike[str] = "data/input_data_total/masks",
             verbose: Optional[bool] = False,
     ) -> None:
-        super().__init__()
+        super(BraTS2020Dataset, self).__init__()
         self.images = self._load_npy_files(image_dir, verbose=verbose)
         self.masks = self._load_npy_files(mask_dir, verbose=verbose)
         self.verbose = verbose
@@ -50,7 +50,7 @@ class BraTS2020Dataset(Dataset):
                 f"{Fore.YELLOW}{len(file_paths)}{Style.RESET_ALL} .npy files in {directory}"
             )
 
-        return [torch.from_numpy(np.load(path)).type(torch.float32) for path in file_paths]
+        return [torch.from_numpy(np.load(path)).type(torch.float32).permute(3, 0, 1, 2) for path in file_paths]
 
     def __len__(self):
         return len(self.images)
