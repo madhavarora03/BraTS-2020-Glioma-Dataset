@@ -310,7 +310,7 @@ def train_fn(
         train_dataloader: DataLoader,
         val_dataloader: DataLoader,
         optimizer: torch.optim.Optimizer,
-        scheduler: torch.optim.lr_scheduler.StepLR,
+        scheduler: torch.optim.lr_scheduler,
         loss_fn: nn.Module,
         device: torch.device = DEVICE,
         epochs: int = 10,
@@ -325,7 +325,7 @@ def train_fn(
         train_dataloader (DataLoader): The DataLoader for training data.
         val_dataloader (DataLoader): The DataLoader for testing/validation data.
         optimizer (Optimizer): The optimizer used to update the model parameters.
-        scheduler (lr_scheduler._LRScheduler): The learning rate scheduler to adjust the learning rate.
+        scheduler (lr_scheduler): The learning rate scheduler to adjust the learning rate.
         loss_fn (nn.Module): The loss function.
         device (torch.device): The device to run the model on.
         epochs (int): The number of epochs to train the model.
@@ -343,11 +343,16 @@ def train_fn(
         "train_acc": [],
         "val_loss": [],
         "val_dice": [],
-        "val_acc": []
+        "val_acc": [],
+        "lr": []
     }
 
     for epoch in range(epochs):
         tqdm.write(f"\n======== Epoch {epoch + 1}/{epochs} ========")
+
+        # Get current learning rate
+        current_lr = optimizer.param_groups[0]['lr']
+        history["lr"].append(current_lr)
 
         # Training phase
         train_loss, (train_dice, train_acc) = train_step(
@@ -382,11 +387,15 @@ def train_fn(
         # Print epoch results
         tqdm.write(
             f"Train Loss: {train_loss:.6f}, Train Dice: {train_dice:.6f}, Train Acc: {train_acc:.6f} | "
-            f"Val Loss: {val_loss:.6f}, Val Dice: {val_dice:.6f}, Val Acc: {val_acc:.6f}"
+            f"Val Loss: {val_loss:.6f}, Val Dice: {val_dice:.6f}, Val Acc: {val_acc:.6f} | "
+            f"LR: {current_lr:.2e}"
         )
 
         # Step the learning rate scheduler
-        scheduler.step()
+        if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+            scheduler.step(val_loss)
+        else:
+            scheduler.step()
 
         # Early stopping check
         early_stopping(val_loss, model)
@@ -432,8 +441,13 @@ def main():
         focal_alpha=0.25  # Standard focal loss alpha
     )
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-5)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-5)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+        optimizer,
+        T_0=10,  # Number of iterations for the first restart
+        T_mult=2,  # A factor increases the number of iterations after a restart
+        eta_min=1e-6  # Minimum learning rate
+    )
 
     # Start training model
     history = train_fn(
@@ -448,8 +462,8 @@ def main():
         best_checkpoint=f"checkpoints/best_model_{NUM_EPOCHS}.pth"
     )
 
+    # Plot and save results
     plot_metrics(history)
-
     with open("results/history.json", "w") as f:
         # noinspection PyTypeChecker
         json.dump(history, f)

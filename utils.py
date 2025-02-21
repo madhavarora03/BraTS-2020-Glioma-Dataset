@@ -189,37 +189,57 @@ class HistoryDict(TypedDict):
     val_loss: List[float]
     val_dice: List[float]
     val_acc: List[float]
+    lr: List[float]
 
 
-def plot_metrics(history: HistoryDict) -> None:
-    plt.figure(figsize=(15, 5))
+def plot_metrics(history: HistoryDict, save_plot: Optional[bool] = False) -> None:
+    """
+    Plot training metrics including loss, dice score, accuracy, and learning rate.
+
+    Args:
+        history (HistoryDict): Dictionary containing training history
+        save_plot (Optional[bool]): If True, save a plot of the training history.
+    """
+    # Create a figure with 2 rows and 2 columns
+    fig, axes = plt.subplots(2, 2, figsize=(15, 10))
 
     # Plot Loss (Train vs Validation)
-    plt.subplot(1, 3, 1)
-    plt.plot(history["train_loss"], label="Train Loss", color="blue")
-    plt.plot(history["val_loss"], label="Val Loss", color="red")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.title("Loss Over Epochs")
-    plt.legend()
+    axes[0, 0].plot(history["train_loss"], label="Train Loss", color="blue")
+    axes[0, 0].plot(history["val_loss"], label="Val Loss", color="red")
+    axes[0, 0].set_xlabel("Epoch")
+    axes[0, 0].set_ylabel("Loss")
+    axes[0, 0].set_title("Loss Over Epochs")
+    axes[0, 0].legend()
+    axes[0, 0].grid(True)
 
     # Plot Dice Score (Train vs Validation)
-    plt.subplot(1, 3, 2)
-    plt.plot(history["train_dice"], label="Train Dice Score", color="blue")
-    plt.plot(history["val_dice"], label="Val Dice Score", color="red")
-    plt.xlabel("Epoch")
-    plt.ylabel("Dice Score")
-    plt.title("Dice Score Over Epochs")
-    plt.legend()
+    axes[0, 1].plot(history["train_dice"], label="Train Dice Score", color="blue")
+    axes[0, 1].plot(history["val_dice"], label="Val Dice Score", color="red")
+    axes[0, 1].set_xlabel("Epoch")
+    axes[0, 1].set_ylabel("Dice Score")
+    axes[0, 1].set_title("Dice Score Over Epochs")
+    axes[0, 1].legend()
+    axes[0, 1].grid(True)
 
     # Plot Accuracy (Train vs Validation)
-    plt.subplot(1, 3, 3)
-    plt.plot(history["train_acc"], label="Train Accuracy", color="blue")
-    plt.plot(history["val_acc"], label="Val Accuracy", color="red")
-    plt.xlabel("Epoch")
-    plt.ylabel("Accuracy")
-    plt.title("Accuracy Over Epochs")
-    plt.legend()
+    axes[1, 0].plot(history["train_acc"], label="Train Accuracy", color="blue")
+    axes[1, 0].plot(history["val_acc"], label="Val Accuracy", color="red")
+    axes[1, 0].set_xlabel("Epoch")
+    axes[1, 0].set_ylabel("Accuracy")
+    axes[1, 0].set_title("Accuracy Over Epochs")
+    axes[1, 0].legend()
+    axes[1, 0].grid(True)
+
+    # Plot Learning Rate
+    axes[1, 1].plot(history["lr"], label="Learning Rate", color="green")
+    axes[1, 1].set_xlabel("Epoch")
+    axes[1, 1].set_ylabel("Learning Rate")
+    axes[1, 1].set_title("Learning Rate Over Epochs")
+    axes[1, 1].set_yscale('log')  # Use log scale for learning rate
+    axes[1, 1].legend()
+    axes[1, 1].grid(True)
 
     plt.tight_layout()
+    if save_plot:
+        plt.savefig('results/training_metrics.png', dpi=300, bbox_inches='tight')
     plt.show()
