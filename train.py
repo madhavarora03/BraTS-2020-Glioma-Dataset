@@ -10,13 +10,14 @@ from colorama import Fore, Style
 from torch import nn
 from torch import optim
 from torch.optim import lr_scheduler
+from torch.optim.lr_scheduler import LinearLR, CosineAnnealingLR, SequentialLR
 from torch.utils.data import DataLoader
 from torchinfo import summary
 from tqdm import tqdm
 
 from dataset import BraTS2020Dataset as Dataset
 from simple_3d_unet import Simple3DUNET
-from utils import save_checkpoint, calc_dice_score, get_weights, calc_accuracy, load_checkpoint, plot_metrics
+from utils import save_checkpoint, calc_dice_score, calc_accuracy, load_checkpoint, plot_metrics
 
 # ------------------------------
 # Hyperparameters etc.
@@ -29,7 +30,8 @@ NUM_EPOCHS = 100
 NUM_WORKERS = os.cpu_count()
 PIN_MEMORY = True
 # LOAD_MODEL = False
-CLASS_WEIGHTS = get_weights("data/input_data_total/masks", num_classes=4)
+# CLASS_WEIGHTS = get_weights("data/input_data_total/masks", num_classes=4)
+CLASS_WEIGHTS = torch.tensor([1, 1, 1, 1])
 TRAIN_IMG_DIR = "data/input_data_split/train/images"
 TRAIN_MASK_DIR = "data/input_data_split/train/masks"
 VAL_IMG_DIR = "data/input_data_split/val/images"
@@ -392,10 +394,7 @@ def train_fn(
         )
 
         # Step the learning rate scheduler
-        if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-            scheduler.step(val_loss)
-        else:
-            scheduler.step()
+        scheduler.step()
 
         # Early stopping check
         early_stopping(val_loss, model)
@@ -415,7 +414,7 @@ def train_fn(
 
 def main():
     print(f"Running on device: {Fore.GREEN}'{DEVICE}'{Style.RESET_ALL}.")
-    print(f"Class Weights: {CLASS_WEIGHTS}")
+    print(f"Class Weights: {CLASS_WEIGHTS / CLASS_WEIGHTS.sum()}")
 
     # Load Dataset
     train_dataset = Dataset(image_dir=TRAIN_IMG_DIR, mask_dir=TRAIN_MASK_DIR)
@@ -442,12 +441,10 @@ def main():
     )
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-        optimizer,
-        T_0=10,  # Number of iterations for the first restart
-        T_mult=2,  # A factor increases the number of iterations after a restart
-        eta_min=1e-6  # Minimum learning rate
-    )
+
+    warmup = LinearLR(optimizer, start_factor=0.1, total_iters=5)
+    cosine = CosineAnnealingLR(optimizer, T_max=25, eta_min=1e-6)
+    scheduler = SequentialLR(optimizer, schedulers=[warmup, cosine], milestones=[5])
 
     # Start training model
     history = train_fn(
